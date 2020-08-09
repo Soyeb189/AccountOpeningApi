@@ -4,7 +4,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ApiClint {
-    public static final String BASE_URL = "http://10.11.200.106:8085/ords/emob/bankasia/agentbanking/";
+    public static final String BASE_URL = "http://202.40.181.106:7778/";
     public static Retrofit retrofit;
 
     public static ApiInterface getApiClint(){

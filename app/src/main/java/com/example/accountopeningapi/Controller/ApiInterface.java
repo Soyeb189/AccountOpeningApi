@@ -8,7 +8,7 @@ import retrofit2.http.POST;
 
 public interface ApiInterface {
 
-    @POST("acopen")
+    @POST("absacopen")
     Call<AcOpenConfirmation> getAcOpenCOnfirmation(
             @Header("requestinfo") String requestInfo,
             @Header("user") String userId

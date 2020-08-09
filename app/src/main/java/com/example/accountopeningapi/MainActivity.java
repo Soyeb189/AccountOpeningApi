@@ -8,7 +8,9 @@ import android.widget.Toast;
 
 import com.example.accountopeningapi.Controller.ApiClint;
 import com.example.accountopeningapi.Controller.ApiInterface;
+import com.example.accountopeningapi.Model.AC_OPEN;
 import com.example.accountopeningapi.Model.AcOpenConfirmation;
+import com.google.gson.Gson;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -30,17 +32,20 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static com.example.accountopeningapi.JsonData.json;
+
 public class MainActivity extends AppCompatActivity {
     public static String hex;
-    String initVector="0000000000000000";
+    String responseJson;
     String jsonData;
+    String decryptJson;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         try {
             JsonData.createJson();
-            jsonData=JsonData.json;
+            jsonData= json;
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -49,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
 
         networkCall();
 
+
     }
 
 
@@ -56,25 +62,9 @@ public class MainActivity extends AppCompatActivity {
     private void setEncryptDrcrypt() {
         String key = "MyEncryptionKeyERA_AGENT_BANKING";
         Log.e("do_now_",encrypt(key, jsonData));
-        Log.e("do_now_result",decrypt(key,"0000000000000000", hex));
+        //Log.e("do_now_result",decrypt(key,"0000000000000000", hex));
     }
-    public static String decrypt(String key, String initVector, String encrypted) {
-        try {
-            IvParameterSpec iv = new IvParameterSpec(initVector.getBytes("UTF-8"));
-            SecretKeySpec skeySpec = new SecretKeySpec(key.getBytes("UTF-8"), "AES");
 
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-            cipher.init(Cipher.DECRYPT_MODE, skeySpec, iv);
-
-            byte[] original = cipher.doFinal(hexStringToByteArray(encrypted));
-
-            return new String(original);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-
-        return null;
-    }
 
     public static String encrypt(String key,String value) {
         try {
@@ -117,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void networkCall() {
         ApiInterface apiInterface = ApiClint.getApiClint();
-        String userId = "xyz";
+        String userId = "IBANKING";
         Call<AcOpenConfirmation> call = apiInterface.getAcOpenCOnfirmation(hex,userId);
         call.enqueue(new Callback<AcOpenConfirmation>() {
             @Override
@@ -125,8 +115,13 @@ public class MainActivity extends AppCompatActivity {
                 AcOpenConfirmation acOpenConfirmation = response.body();
                 if (response.isSuccessful()){
                     if (response.body().getMessage().equals("Webservice Calling Successful.")){
-                        String responseJson = acOpenConfirmation.getResponse();
-                        Log.e("response_json",responseJson);
+                        responseJson = acOpenConfirmation.getResponse();
+                        String key = "MyEncryptionKeyERA_AGENT_BANKING";
+                        Log.e("do_now_result",decrypt(key,"0000000000000000", responseJson));
+                        Gson gson = new Gson(); // Or use new GsonBuilder().create();
+                        AC_OPEN target2 = gson.fromJson(decryptJson, AC_OPEN.class);
+                        //Log.e("ac",target2.getResponseCode());
+
 
                     }else {
                         Toast.makeText(MainActivity.this, "Something Wrong", Toast.LENGTH_SHORT).show();
@@ -139,6 +134,25 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    public String decrypt(String key, String initVector, String encrypted) {
+        try {
+            IvParameterSpec iv = new IvParameterSpec(initVector.getBytes("UTF-8"));
+            SecretKeySpec skeySpec = new SecretKeySpec(key.getBytes("UTF-8"), "AES");
+
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+            cipher.init(Cipher.DECRYPT_MODE, skeySpec, iv);
+
+            byte[] original = cipher.doFinal(hexStringToByteArray(encrypted));
+
+            decryptJson = new String(original);
+            return decryptJson;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return null;
     }
 
 
